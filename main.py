@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import ai
+from app.routers import ai, system
 from app.config import settings
 from app.middleware.logging_middleware import LoggingMiddleware
+from app.middleware.auth_middleware import ApiKeyMiddleware
 
 app = FastAPI(
     title="ZetuMall AI Service",
@@ -22,8 +23,12 @@ app.add_middleware(
 # Logging middleware
 app.add_middleware(LoggingMiddleware)
 
+# Authentication middleware
+app.add_middleware(ApiKeyMiddleware)
+
 # Include routers
 app.include_router(ai.router, prefix="/api/ai", tags=["AI"])
+app.include_router(system.router, tags=["System"])
 
 @app.get("/health")
 async def health_check():

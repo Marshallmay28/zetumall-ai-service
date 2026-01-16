@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     
     # Server
     PORT: int = 8000
+    AI_SERVICE_API_KEY: str = "zetumall_ai_secret_key_123"
+
     
     @property
     def cors_origins_list(self) -> List[str]:
