@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from pydantic import BaseModel
 from typing import Optional, List
 from app.auth.supabase_auth import get_current_user
@@ -31,6 +31,10 @@ class QualityAnalysisRequest(BaseModel):
     description: str
     price: float
     category: str
+
+class SecurityAnalysisRequest(BaseModel):
+    health_data: dict
+    error_logs: List[dict]
 
 @router.post("/description")
 async def generate_product_description(
@@ -130,5 +134,41 @@ async def analyze_product_quality(
             "success": True,
             "analysis": analysis
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/analyze-image")
+async def analyze_product_image(
+    image: UploadFile = File(...),
+    user: dict = Depends(get_current_user)
+):
+    """Analyze product image"""
+    try:
+        content = await image.read()
+        analysis = await gemini_client.analyze_product_image(
+            image_data=content,
+            mime_type=image.content_type
+        )
+        
+        return {
+            "success": True,
+            **analysis
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/security-analysis")
+async def analyze_security(
+    data: SecurityAnalysisRequest,
+    user: dict = Depends(get_current_user)
+):
+    """Generate security briefing"""
+    try:
+        analysis = await gemini_client.analyze_security_briefing(
+            health_data=data.health_data,
+            error_logs=data.error_logs
+        )
+        
+        return analysis
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

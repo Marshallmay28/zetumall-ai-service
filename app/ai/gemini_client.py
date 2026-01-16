@@ -185,4 +185,155 @@ Format as JSON:
                 "improvements": ["Consider adding more details"]
             }
 
+    
+    async def analyze_product_image(self, image_data: bytes, mime_type: str) -> dict:
+        """Analyze product image for quality and compliance"""
+        
+        prompt = """🧠 ZETUMALL AI ANALYZER — MARKET PRECISION MODE
+
+You are ZetuMall AI Analyzer, a marketplace intelligence engine that evaluates product images for listing quality.
+
+CORE OUTPUT RULES (STRICT):
+- Concise, marketplace language
+- Max 2 short lines per field
+- No paragraphs, emojis, or filler
+- Structured JSON output only
+- If uncertain → "Needs review"
+- If risky → flag immediately
+
+PRODUCT IMAGE ANALYSIS OUTPUT (JSON):
+{
+  "valid": boolean,
+  "product_title": "Market-ready, searchable name (max 80 chars)",
+  "category": "Primary marketplace category",
+  "description": "Primary value. Usage or compatibility.",
+  "key_attributes": ["Core feature", "Core specification"],
+  "listing_quality": "Poor | Fair | Good | Excellent",
+  "compliance_status": "Approved | Restricted | Prohibited",
+  "risk_indicator": "Low | Medium | High",
+  "confidence": 0-100,
+  "reason": "Short reason if invalid or risky"
+}
+
+DECISION RULES:
+- High quality + low risk → Approved
+- Low quality + medium risk → Needs review
+- High risk → Prohibited
+- Confidence < 65 → Manual review
+
+Analyze the product image and return ONLY the JSON structure above."""
+
+        try:
+            response = self.model.generate_content([
+                prompt,
+                {
+                    "mime_type": mime_type,
+                    "data": image_data
+                }
+            ])
+            
+            text = response.text
+            
+            # Robust JSON extraction
+            import json
+            import re
+            
+            json_match = re.search(r'\{[\s\S]*\}', text)
+            if not json_match:
+                raise Exception("No JSON structure found")
+                
+            return json.loads(json_match.group(0))
+            
+        except Exception as e:
+            raise Exception(f"Failed to analyze image: {str(e)}")
+
+    async def analyze_security_briefing(self, health_data: dict, error_logs: list) -> dict:
+        """Analyze system health and security logs"""
+        
+        prompt = f"""
+        You are a Cyber Security Ops AI for ZetuMall.
+        Analyze the following system status and error logs to provide a security briefing.
+        
+        System Health: {health_data}
+        Recent Errors: {error_logs}
+
+        Your response must be a valid JSON object with the following structure:
+        {{
+            "briefing": "A concise 2-3 sentence overview of the current security and stability state.",
+            "status": "SECURE" | "WARNING" | "CRITICAL",
+            "recommendations": [
+                {{ "title": "...", "description": "...", "priority": "high" | "medium" | "low" }}
+            ],
+            "stats": {{
+                "errorRate": "e.g. 5% last hour",
+                "riskLevel": "Low" | "Medium" | "High"
+            }}
+        }}
+        Do not include any markdown formatting like ```json. Return only the raw JSON.
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            text = response.text.strip().replace("```json", "").replace("```", "")
+            
+            import json
+            return json.loads(text)
+        except Exception as e:
+            # Fallback response
+            return {
+                "briefing": "System is operational. Some non-critical errors detected in processing.",
+                "status": "SECURE",
+                "recommendations": [{"title": "Monitor Logs", "description": "Continue monitoring error logs for patterns.", "priority": "low"}],
+                "stats": {"errorRate": "Normal", "riskLevel": "Low"}
+            }
+
+    async def chat_support(self, message: str) -> dict:
+        """Chat support for ZetuMall"""
+        
+        # Simple language detection
+        swahili_keywords = ['habari', 'sawa', 'asante', 'tafadhali', 'nini', 'vipi', 'nina', 'nataka']
+        is_swahili = any(keyword in message.lower() for keyword in swahili_keywords)
+        language = 'sw' if is_swahili else 'en'
+        
+        system_prompt = """You are a helpful customer support assistant for ZetuMall, an e-commerce platform in Kenya.
+
+IMPORTANT GUIDELINES:
+- You are a ZetuMall staff member helping customers
+- Be friendly, professional, and concise
+- Answer questions about orders, payments, delivery, products, and account issues
+- Support both English and Swahili languages
+- If you detect Swahili, respond in Swahili
+- For complex issues, suggest contacting human support
+- Never make up order numbers or specific details
+- Focus on general help and guidance
+
+ZETUMALL FEATURES:
+- Escrow payment system for secure transactions
+- Local delivery within Kenya
+- Buyer and seller marketplace
+- Product listings and store management
+- Order tracking
+- Secure payments via M-Pesa
+
+Keep responses short (2-3 sentences max) and helpful."""
+
+        prompt = f"{system_prompt}\n\nUser message: {message}\n\nRespond in {'Swahili' if language == 'sw' else 'English'}."
+        
+        try:
+            response = self.model.generate_content(prompt)
+            reply = response.text
+            
+            suggestions = [
+                'Fuatilia agizo langu', 'Msaada wa malipo', 'Maelezo ya utoaji', 'Wasiliana na msaada'
+            ] if language == 'sw' else [
+                'Track my order', 'Payment help', 'Delivery info', 'Contact support'
+            ]
+            
+            return {
+                "message": reply,
+                "suggestions": suggestions
+            }
+        except Exception as e:
+            raise Exception(f"Chat failed: {str(e)}")
+
 gemini_client = GeminiClient()

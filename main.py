@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import ai
 from app.config import settings
+from app.middleware.logging_middleware import LoggingMiddleware
 
 app = FastAPI(
     title="ZetuMall AI Service",
@@ -17,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Logging middleware
+app.add_middleware(LoggingMiddleware)
 
 # Include routers
 app.include_router(ai.router, prefix="/api/ai", tags=["AI"])
