@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import ai, system
+from app.routers import ai, system, admin_dashboard
 from app.config import settings
 from app.middleware.logging_middleware import LoggingMiddleware
 from app.middleware.auth_middleware import ApiKeyMiddleware
@@ -29,6 +29,7 @@ app.add_middleware(ApiKeyMiddleware)
 # Include routers
 app.include_router(ai.router, prefix="/api/ai", tags=["AI"])
 app.include_router(system.router, tags=["System"])
+app.include_router(admin_dashboard.router)  # Admin Dashboard
 
 @app.get("/health")
 async def health_check():
