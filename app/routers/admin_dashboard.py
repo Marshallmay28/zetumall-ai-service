@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from app.middleware.api_key import verify_api_key
+from app.middleware.auth_middleware import verify_api_key
 
 router = APIRouter(prefix="/admin/dashboard", tags=["Admin Dashboard"])
 
